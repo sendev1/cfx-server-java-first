@@ -42,23 +42,8 @@ public class ApplicationConfig {
 	// assumes the current class is called MyLogger
 	private final static Logger LOGGER = Logger.getLogger(ApplicationConfig.class.getName());
 
-
-
-	@Bean(name="myBus")
-	public Bus myBus(@Qualifier("cxf") Bus bus, DumpingClassLoaderCapturer capturer){
-		LOGGER.info("Creating CXf bus.....");
-		bus.setExtension(capturer, GeneratedClassClassLoaderCapture.class);
-		/*bus.setExtension(new WrapperHelperClassLoader(bus), WrapperHelperCreator.class);
-		bus.setExtension(new ExtensionClassLoader(bus), ExtensionClassCreator.class);
-		bus.setExtension(new ExceptionClassLoader(bus), ExceptionClassCreator.class);
-		bus.setExtension(new WrapperClassLoader(bus), WrapperClassCreator.class);
-		bus.setExtension(new FactoryClassLoader(bus), FactoryClassCreator.class);
-		bus.setExtension(new GeneratedNamespaceClassLoader(bus), NamespaceClassCreator.class);*/
-		return bus;
-	}
-
 	@Bean
-	public Endpoint endpoint(@Qualifier("myBus") Bus bus) {
+	public Endpoint endpoint(Bus bus) {
 		LOGGER.log(Level.INFO, "ENDPOINT Creating Server ednpoint object");
 		EndpointImpl endpoint =
 			new EndpointImpl(bus,new StockQuoteReporter());
@@ -68,7 +53,7 @@ public class ApplicationConfig {
 	}
 
 	@Bean("stockQuoteSoapClient")
-	public QuoteReporter stockQuoteSoapClient(@Qualifier("myBus")Bus bus){
+	public QuoteReporter stockQuoteSoapClient(Bus bus){
 		LOGGER.log(Level.INFO, "Creating client.............");
 		final JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
 		factory.setBus(bus);
