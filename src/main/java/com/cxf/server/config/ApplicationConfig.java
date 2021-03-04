@@ -1,5 +1,6 @@
-package com.cxf.server;
+package com.cxf.server.config;
 
+import com.cxf.server.DumpingClassLoaderCapturer;
 import com.cxf.server.service.QuoteReporter;
 import com.cxf.server.service.StockQuoteReporter;
 
@@ -12,7 +13,7 @@ import javax.annotation.PreDestroy;
 import javax.xml.ws.Endpoint;
 
 import org.apache.cxf.Bus;
-import org.apache.cxf.bus.spring.SpringBus;
+import org.apache.cxf.BusFactory;
 import org.apache.cxf.clustering.FailoverFeature;
 import org.apache.cxf.clustering.RetryStrategy;
 import org.apache.cxf.common.spi.GeneratedClassClassLoaderCapture;
@@ -35,16 +36,36 @@ import org.apache.cxf.wsdl.ExtensionClassLoader;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+
 public class ApplicationConfig {
 
 	// assumes the current class is called MyLogger
 	private final static Logger LOGGER = Logger.getLogger(ApplicationConfig.class.getName());
 
 	@Bean
+	@Profile("!capture")
+	public Bus bus(Bus cxfBus){
+		LOGGER.log(Level.INFO,"Setting up Bus to create native image");
+		final Bus bus = cxfBus;
+		bus.setId("krd_ID");
+		BusFactory.setDefaultBus(bus);
+		bus.setExtension(new WrapperHelperClassLoader(cxfBus), WrapperHelperCreator.class);
+		bus.setExtension(new ExtensionClassLoader(cxfBus), ExtensionClassCreator.class);
+		bus.setExtension(new ExceptionClassLoader(cxfBus), ExceptionClassCreator.class);
+		bus.setExtension(new WrapperClassLoader(cxfBus), WrapperClassCreator.class);
+		bus.setExtension(new FactoryClassLoader(cxfBus), FactoryClassCreator.class);
+		bus.setExtension(new GeneratedNamespaceClassLoader(cxfBus), NamespaceClassCreator.class);
+		return bus;
+	}
+
+	@Bean
 	public Endpoint endpoint(Bus bus) {
 		LOGGER.log(Level.INFO, "ENDPOINT Creating Server ednpoint object");
+		LOGGER.info("BUS ID: " + bus.getId());
 		EndpointImpl endpoint =
 			new EndpointImpl(bus,new StockQuoteReporter());
 		endpoint.publish("/stockQuote");
@@ -55,6 +76,7 @@ public class ApplicationConfig {
 	@Bean("stockQuoteSoapClient")
 	public QuoteReporter stockQuoteSoapClient(Bus bus){
 		LOGGER.log(Level.INFO, "Creating client.............");
+		LOGGER.info("BUS ID: " + bus.getId());
 		final JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
 		factory.setBus(bus);
 		factory.setServiceClass(QuoteReporter.class);

@@ -8,10 +8,11 @@ import com.cxf.server.DumpingClassLoaderCapturer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 /**
@@ -21,16 +22,32 @@ import org.springframework.stereotype.Component;
 @Component
 public class Applistener implements ApplicationListener<ContextClosedEvent> {
 
-	@Autowired
-	private DumpingClassLoaderCapturer capturer;
+	private final DumpingClassLoaderCapturer capturer;
+
+	private final Environment environment;
+
+	public Applistener(DumpingClassLoaderCapturer capturer, Environment environment) {
+		this.capturer = capturer;
+		this.environment = environment;
+	}
+
 
 	@Override
 	public void onApplicationEvent(ContextClosedEvent event) {
 		System.out.println("shutdown listener"+ capturer.hashCode());
-		try {
-			capturer.dumpTo(new File("dump"));
-		} catch (IOException e) {
-			e.printStackTrace();
+		System.out.println(Arrays.toString(environment.getActiveProfiles()));
+		final boolean captureProfile = Arrays.stream(environment.getActiveProfiles()).anyMatch(s -> s.equalsIgnoreCase("capture"));
+		System.out.println("captureProfile:"+captureProfile);
+		final File dumpfolder = new File("src/main/resources");
+		System.out.println(dumpfolder.getAbsolutePath());
+		System.out.println("dumpfolder:"+dumpfolder.exists());
+		if(captureProfile){
+			try {
+				capturer.dumpTo(dumpfolder);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
+
 	}
 }
