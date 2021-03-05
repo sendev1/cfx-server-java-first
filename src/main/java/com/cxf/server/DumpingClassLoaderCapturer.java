@@ -52,8 +52,5 @@ public class DumpingClassLoaderCapturer implements GeneratedClassClassLoaderCapt
 		classes.putIfAbsent(className, bytes);
 	}
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void startApp() {
-		System.out.println("app start");
-	}
+
 }

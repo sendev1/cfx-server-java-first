@@ -13,7 +13,7 @@ SET GRAAL_AGENT_PATH=%rootPath%build\graal-agent
 echo "GRAAL_AGENT_PATH" %GRAAL_AGENT_PATH%
 
 echo "Packaging %ARTIFACT% with Gradle"
-call gradlew build
+call gradlew build -x test
 
 echo "***************************** Setting JAR ************************************************"
 SET JAR="%ARTIFACT%-%VERSION%.jar"
@@ -26,7 +26,7 @@ echo "***************************** Copy jars & classes ************************
 xcopy "META-INF" "BOOT-INF/classes" /s /e
 
 echo "***************************** Copy dump class laoders *****************************************"
-xcopy "../../dump" "BOOT-INF/classes" /s /e
+rem xcopy "../../dump" "BOOT-INF/classes" /s /e
 
 SET CP=BOOT-INF\classes;BOOT-INF\lib\*
 
